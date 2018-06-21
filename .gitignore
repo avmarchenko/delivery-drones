@@ -109,3 +109,4 @@ _resources/
 *.log*
 nohup*
 *.out
+config.json
