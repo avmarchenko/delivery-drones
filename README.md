@@ -1,2 +1,1 @@
-# delivery-drones
-Delivery drone monitoring data engineering project
+# Monitoring Delivery Drone Proximity in Real Time
