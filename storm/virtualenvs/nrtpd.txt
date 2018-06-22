@@ -1,4 +1,0 @@
-streamparse
-numpy
-numba
-happybase

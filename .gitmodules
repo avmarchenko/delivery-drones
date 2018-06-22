@@ -1,0 +1,6 @@
+[submodule "dronedirector"]
+	path = dronedirector
+	url = git@github.com:avmarchenko/dronedirector.git
+[submodule "dronestorm"]
+	path = dronestorm
+	url = git@github.com:avmarchenko/dronestorm.git
