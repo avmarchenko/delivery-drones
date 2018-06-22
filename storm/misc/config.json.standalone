@@ -1,0 +1,19 @@
+{
+    "serializer": "json",
+    "topology_specs": "topologies/",
+    "virtualenv_specs": "virtualenvs/",
+    "envs": {
+        "prod": {
+            "user": "ubuntu",
+            "nimbus": "10.0.0.13",
+            "workers": ["10.0.0.5", "10.0.0.8", "10.0.0.11"],
+            "log": {
+                "path": "",
+                "max_bytes": 1000000,
+                "backup_count": 10,
+                "level": "info"
+            },
+            "virtualenv_root": ""
+        }
+    }
+}
