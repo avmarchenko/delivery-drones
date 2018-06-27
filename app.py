@@ -13,6 +13,7 @@ Note:
 """
 import dash
 import uuid
+import json
 import random
 import pandas as pd
 import dash_core_components as dcc
@@ -22,7 +23,7 @@ from plotly.graph_objs import Figure
 import dronedirector as dd
 from happybase import Connection
 from dronedirector.aerial import dtfmt    # Import this stuff to the base namespace
-from datetime.datetime import now         # for speed.
+from datetime import datetime             # for speed.
 from datetime import timedelta
 
 
@@ -49,12 +50,12 @@ app = dash.Dash("Drone Director")
 header = [html.H1(children="Drone Director"),
           html.H2(children="Monitoring the relative proximity of simulated delivery drones!")]
 graph = dcc.Graph(id='describe_proximity')
-graphdiv = html.Div([graph, style=dict(width="80%", height="auto", display="inline-block")])
+graphdiv = html.Div([graph], style=dict(width="80%", height="auto", display="inline-block"))
 graphint = dcc.Interval(id="meanup", interval=2000, n_intervals=0)
 app.layout = html.Div(children=header+[graphdiv, graphint])
 
 
-@app.callback(Output('describe_proximity', 'figure'), [Input('frqupdate', 'n_intervals')])
+@app.callback(Output('describe_proximity', 'figure'), [Input('meanup', 'n_intervals')])
 def describe_proximity(window_ms=2000):
     """
     Poll the DB at a given interval to get the minimum proximity, average proximity
@@ -64,23 +65,26 @@ def describe_proximity(window_ms=2000):
         interval (int): Inteval at which to update
         window_ms (int): Window range for averaging (in milliseconds)
     """
-    now_ = now()
+    now_ = datetime.now()
     start = (now_ - timedelta(milliseconds=window_ms)).strftime(dtfmt)
     stop = now_.strftime(dtfmt)
     conn = Connection(config['hbase'], port=int(config['thrift']))
     tab = conn.table(str.encode(config['prox_table']))
     dct = {k: v for k, v in tab.scan(row_start=pk01+start, row_stop=pk01+stop)}
-    df = pd.DataFrame.from_dict(dct, orient="index").reset_index()
-    df[b'spatial:dr'] = df[b'spatial:dr'].astype(float)
-    min_ = df[b'spatial:dr'].min()
-    avg_ = df[b'spatial:dr'].mean()
-    var_ = df[b'spatial:dr'].var()
+    if len(dct) > 0:
+        df = pd.DataFrame.from_dict(dct, orient="index").reset_index()
+        df[b'spatial:dr'] = df[b'spatial:dr'].astype(float)
+        #min_ = df[b'spatial:dr'].min()
+        avg_ = df[b'spatial:dr'].mean()
+        #var_ = df[b'spatial:dr'].var()
+    else:
+        min_ = 0
+        avg_ = 0.0
+        var_ = 0
 
-    trace = [{'x': [now_], 'y': [avg_], 'type': "line", 'name': 'Mean'}]
+    trace = [{'x': [str(now_)], 'y': [avg_], 'type': "scatter", 'mode': "lines", 'name': 'Mean'}]
     layout = {'height': 300, 'yaxis': {'title': "Windowed Mean Proximity"}}
     return Figure(data=trace, layout=layout)
-
-
 
 
 if __name__ == '__main__':
