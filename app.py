@@ -4,20 +4,52 @@
 """
 Delivery Drone Monitor
 ################################
+A simple frontend demo that monitors the recently seen
+drone proximity. Ass
 """
 import dash
+import uuid
+import random
 import dash_core_components as dcc
 import dash_html_components as html
+import dronedirector as dd
+from datetime import datetime
+from happybase import Connection
 
 
-app = dash.Dash()
-app.layout = html.Div(children=[html.H1(children="Delivery Drones"),
-                                html.Div(children="""Monitoring the proximity of simulated delivery drones to one another."""),
-                                dcc.Graph(id="example-graph",
-                                          figure={'data': [
-                                            {'x': [1, 2, 3], 'y': [4, 1, 2], 'type': 'bar', 'name': 'SF'},
-                                            {'x': [1, 2, 3], 'y': [2, 4, 5], 'type': 'bar', 'name': u'Montréal'},
-                                        ], 'layout': {'title': 'Example'}})])
+# Example drones
+rd = random.Random()
+rd.seed(0)
+uid0 = uuid.UUID(int=rd.getrandbits(128))
+rd.seed(1)
+uid1 = uuid.UUID(int=rd.getrandbits(128))
+rd.seed(2)
+uid2 = uuid.UUID(int=rd.getrandbits(128))
+d0 = dd.SinusoidalDrone(1000.0, 41.0, "New York County", uid=uid0, speed=0.01)
+d1 = dd.SinusoidalDrone(1000.0, 41.0, "New York County", uid=uid1, speed=0.02)
+d2 = dd.SinusoidalDrone(1000.0, 41.0, "New York County", uid=uid2, speed=0.03)
+
+
+app = dash.Dash("Drone Director")
+header = [html.H1(children="Drone Director"),
+          html.H2(children="Monitoring the relative proximity of simulated delivery drones!")]
+app.layout = html.Div(children=header)
+
+
+def describe_proximity(interval, window_ms=6000):
+    """
+    Poll the DB at a given interval to get the minimum proximity and average proximity
+
+    Args:
+        interval (int): Inteval at which to update
+        window_ms (int): Window range for averaging (in milliseconds)
+    """
+    datetime.datetime.now() - datetime.timedelta(milliseconds=window_ms)
+
+    pass
+
+
+
 
 if __name__ == '__main__':
     app.run_server(debug=True, port=80, host="0.0.0.0")
