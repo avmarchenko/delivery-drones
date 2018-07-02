@@ -11,6 +11,7 @@ Note:
     The app assumes that the database it is connecting to
     is running locally: change as necessary.
 """
+from __future__ import print_function, division
 import dash
 import uuid
 import json
@@ -53,10 +54,12 @@ graph = dcc.Graph(id='describe_proximity')
 graphdiv = html.Div([graph], style=dict(width="80%", height="auto", display="inline-block"))
 graphint = dcc.Interval(id="meanup", interval=2000, n_intervals=0)
 app.layout = html.Div(children=header+[graphdiv, graphint])
+minx = []
+miny = []
 
 
 @app.callback(Output('describe_proximity', 'figure'), [Input('meanup', 'n_intervals')])
-def describe_proximity(window_ms=2000):
+def describe_proximity(window_seconds=300):
     """
     Poll the DB at a given interval to get the minimum proximity, average proximity
     and the variance in the mean (to get a feel for range sampled).
@@ -65,25 +68,28 @@ def describe_proximity(window_ms=2000):
         interval (int): Inteval at which to update
         window_ms (int): Window range for averaging (in milliseconds)
     """
+    dt = timedelta(seconds=window_seconds)
     now_ = datetime.now()
-    start = (now_ - timedelta(milliseconds=window_ms)).strftime(dtfmt)
+    start = (now_ - dt).strftime(dtfmt)
     stop = now_.strftime(dtfmt)
     conn = Connection(config['hbase'], port=int(config['thrift']))
     tab = conn.table(str.encode(config['prox_table']))
-    dct = {k: v for k, v in tab.scan(row_start=pk01+start, row_stop=pk01+stop)}
-    if len(dct) > 0:
-        df = pd.DataFrame.from_dict(dct, orient="index").reset_index()
-        df[b'spatial:dr'] = df[b'spatial:dr'].astype(float)
-        #min_ = df[b'spatial:dr'].min()
-        avg_ = df[b'spatial:dr'].mean()
-        #var_ = df[b'spatial:dr'].var()
-    else:
-        min_ = 0
-        avg_ = 0.0
-        var_ = 0
+    #dct = {k: v for k, v in tab.scan(row_start=pk01+start, row_stop=pk01+stop)}
+    avg_ = 0
+    for pk in (pk01, pk02, pk12):
+        dct = {k: v for k, v in tab.scan(row_start=pk+start, row_stop=pk+stop)}
+        if len(dct) > 0:
+            df = pd.DataFrame.from_dict(dct, orient="index").reset_index()
+            df[b'spatial:dr'] = df[b'spatial:dr'].astype(float)
+            avg_ += df[b'spatial:dr'].mean()
+        else:
+            avg_ += 0.0
+    avg_ /= 3
 
-    trace = [{'x': [str(now_)], 'y': [avg_], 'type': "scatter", 'mode': "lines", 'name': 'Mean'}]
-    layout = {'height': 300, 'yaxis': {'title': "Windowed Mean Proximity"}}
+    minx.append(str(now_))
+    miny.append(avg_)
+    trace = [{'x': minx, 'y': miny, 'type': "scatter", 'mode': "lines", 'name': 'Mean'}]
+    layout = {'height': 600, 'yaxis': {'title': "Windowed Mean Proximity"}}
     return Figure(data=trace, layout=layout)
 
 
