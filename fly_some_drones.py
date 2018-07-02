@@ -12,10 +12,11 @@ import uuid, random
 
 
 rd = random.Random()
+ndrones = 10
 drones = []
-for i in range(10):
+for i in range(ndrones):
     rd.seed(i)
     uid = uuid.UUID(int=rd.getrandbits(128))
-    drones.append(dd.SinusoidalDrone(1000.0, 41.0, "New York County", uid=uid, speed=(i+1/10)))
+    drones.append(dd.SinusoidalDrone(1000.0, 41.0, "New York County", uid=uid, speed=(i+1*10)))
 
-fly_drones("10.0.0.13", 7200, drones=drones, time_delay=0.5)
+fly_drones("10.0.0.13", 72000, drones=drones, time_delay=1.5)

@@ -1,14 +1,26 @@
 # Real Time Monitoring of Delivery Drones
-This project simulates location data (altitude, latitude, longitude) from 
-delivery drones. The data is streamed to a data engineering pipeline that
-calculates relative distances in (near) real time. Although focused on the
-particular
-This is a project that mimics setting up a cloud computing
-infrastructure for processing real time streaming data from
-(fictitious) delivery drones (e.g. package or food delivery).
-Coordinate data is received by the system, processed on-the-fly
-and save to a database. Some batch processes are performed
-periodically on the database to determine aggregate statistics
-about the drones.
+This project utilizes a drone simulation package and an Apache Storm
+topology to create a pipeline that processes drone location (altitude,
+latitude, and longitude) streams and processes relative distances between
+them. The subpackage [dronedirector](https://github.com/avmarchenko/dronedirector)
+is used to create drone objects. The subpackage [dronestorm](https://github.com/avmarchenko/dronestorm)
+is an example topology defined using [streamparse](https://github.com/Parsely/streamparse).
+The files provided here can be used to stand up a simple monitoring application using
+[Dash](https://github.com/plotly/dash).
 
-# Organization
+
+# Cloud Configuration
+An example cloud configuration is as follows.
+
+    1. 1 Kafka server
+    2. 4 Hadoop servers (Hadoop/YARN/HBase)
+    3. 1 Web server
+
+# Monitoring
+After configuring a cluster, in one terminal (for example),
+
+    $ python fly_some_drones.py
+
+and in another terminal.
+
+    $ python app.py
