@@ -17,6 +17,7 @@ import uuid
 import json
 import random
 import pandas as pd
+from collections import deque
 import dash_core_components as dcc
 import dash_html_components as html
 from dash.dependencies import Input, Output
@@ -54,12 +55,14 @@ graph = dcc.Graph(id='describe_proximity')
 graphdiv = html.Div([graph], style=dict(width="80%", height="auto", display="inline-block"))
 graphint = dcc.Interval(id="meanup", interval=2000, n_intervals=0)
 app.layout = html.Div(children=header+[graphdiv, graphint])
-minx = []
-miny = []
+maxlen =1000
+time = deque(maxlen=maxlen)
+avgy = deque(maxlen=maxlen)
+miny = deque(maxlen=maxlen)
 
 
 @app.callback(Output('describe_proximity', 'figure'), [Input('meanup', 'n_intervals')])
-def describe_proximity(window_seconds=300):
+def describe_proximity(window_seconds=180):
     """
     Poll the DB at a given interval to get the minimum proximity, average proximity
     and the variance in the mean (to get a feel for range sampled).
@@ -76,19 +79,23 @@ def describe_proximity(window_seconds=300):
     tab = conn.table(str.encode(config['prox_table']))
     #dct = {k: v for k, v in tab.scan(row_start=pk01+start, row_stop=pk01+stop)}
     avg_ = 0
+    min_ = [None]
     for pk in (pk01, pk02, pk12):
         dct = {k: v for k, v in tab.scan(row_start=pk+start, row_stop=pk+stop)}
         if len(dct) > 0:
             df = pd.DataFrame.from_dict(dct, orient="index").reset_index()
             df[b'spatial:dr'] = df[b'spatial:dr'].astype(float)
             avg_ += df[b'spatial:dr'].mean()
+            min_.append(df[b'spatial:dr'].min()
         else:
             avg_ += 0.0
     avg_ /= 3
 
-    minx.append(str(now_))
-    miny.append(avg_)
-    trace = [{'x': minx, 'y': miny, 'type': "scatter", 'mode': "lines", 'name': 'Mean'}]
+    time.append(str(now_))
+    avgy.append(avg_)
+    miny.append(min(min_))
+    trace = [{'x': time, 'y': avgy, 'type': "scatter", 'mode': "lines", 'name': 'Avg'},
+             {'x': time, 'y': miny, 'type': "scatter", 'mode': "lines", 'name': 'Min'}]
     layout = {'height': 600, 'yaxis': {'title': "Windowed Mean Proximity"}}
     return Figure(data=trace, layout=layout)
 
